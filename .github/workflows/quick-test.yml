@@ -1,0 +1,85 @@
+name: ⚡ Quick Tests
+run-name: ${{ github.actor }} running quick tests ⚡
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  
+  # Allow manual triggers for quick testing
+  workflow_dispatch:
+
+jobs:
+  quick-test:
+    name: ⚡ Quick Test Suite
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: 📦 Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: 🧪 Quick import test
+      run: |
+        python -c "
+        print('🔍 Testing core imports...')
+        import pandas as pd
+        import streamlit as st
+        import yfinance as yf
+        import plotly.express as px
+        print('✅ Core dependencies working')
+        
+        print('🔍 Testing app modules...')
+        import app
+        import financial_apis
+        print('✅ App modules import successfully')
+        
+        print('🔍 Testing SoFi CSV cleaner...')
+        from data.sofi_cleaner import clean_sofi_investment_csv
+        print('✅ SoFi cleaner import working')
+        
+        print('🎉 All quick tests passed!')
+        "
+        
+    - name: 📊 Validate sample data
+      run: |
+        python -c "
+        import pandas as pd
+        
+        print('📊 Testing sample portfolio...')
+        df = pd.read_csv('sample_portfolio.csv')
+        assert len(df) > 0, 'Sample portfolio is empty'
+        assert 'Symbol' in df.columns, 'Missing Symbol column'
+        assert 'Shares' in df.columns, 'Missing Shares column'
+        print(f'✅ Sample portfolio valid: {len(df)} positions')
+        "
+        
+    - name: 🧹 Test SoFi cleaner
+      run: |
+        python data/sofi_cleaner.py sample_portfolio.csv --output quick_test_output.csv
+        if [ -f "quick_test_output.csv" ]; then
+          echo "✅ SoFi CSV cleaner working"
+          rm quick_test_output.csv
+        else
+          echo "❌ SoFi CSV cleaner failed"
+          exit 1
+        fi
+        
+    - name: 🎉 Quick test summary
+      run: |
+        echo "## ⚡ Quick Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "✅ **All core tests passed!**" >> $GITHUB_STEP_SUMMARY
+        echo "- Dependencies: ✅ Working" >> $GITHUB_STEP_SUMMARY
+        echo "- App imports: ✅ Working" >> $GITHUB_STEP_SUMMARY
+        echo "- Sample data: ✅ Valid" >> $GITHUB_STEP_SUMMARY
+        echo "- SoFi cleaner: ✅ Working" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🚀 Ready for full CI/CD pipeline!" >> $GITHUB_STEP_SUMMARY 
