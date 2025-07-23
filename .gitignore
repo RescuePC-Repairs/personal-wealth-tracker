@@ -1,6 +1,10 @@
 # Personal financial data - NEVER commit this
 data/
 *.csv
+# But allow sample/example files
+!sample_portfolio.csv
+!sample*.csv
+!example*.csv
 
 # Environment variables (contains API keys)
 .env
